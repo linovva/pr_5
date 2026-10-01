@@ -9,19 +9,13 @@
     </style>
 </head>
 <body>
-    <!-- Кнопка для Android (WebXR) -->
     <button id="ar-button">START AR</button>
-
-    <!-- Ссылка для iOS (Quick Look). Замените MODEL.usdz на ваш файл -->
-    <a id="quick-look" rel="ar" href="Sheep.usdz" style="display:none; position:fixed; top:20px; left:20px; z-index:10;">
-        <img src="POSTER.png" width="200" alt="View in AR">
-    </a>
 
     <script type="module">
         import * as THREE from "https://esm.sh/three@0.180.0";
         import { GLTFLoader } from "https://esm.sh/three@0.180.0/examples/jsm/loaders/GLTFLoader.js";
 
-        // --- Настройка сцены Three.js (используется только для WebXR) ---
+        // --- Сцена Three.js ---
         const scene = new THREE.Scene();
         scene.add(new THREE.AmbientLight(0xffffff, 2));
         const light = new THREE.DirectionalLight(0xffffff, 3);
@@ -34,16 +28,16 @@
         renderer.setSize(innerWidth, innerHeight);
         document.body.appendChild(renderer.domElement);
 
-        // --- Загрузка 3D-модели ---
+        // --- Загрузка модели (замените MODEL.glb) ---
         let model;
-        new GLTFLoader().load("MODEL.glb", g => {
+        new GLTFLoader().load("model.glb", g => {
             model = g.scene;
             model.visible = false;
             model.scale.setScalar(0.2);
             scene.add(model);
         });
 
-        // --- Маркер (кольцо) для указания места размещения ---
+        // --- Кружочек-маркер ---
         const marker = new THREE.Mesh(
             new THREE.RingGeometry(0.08, 0.1, 32),
             new THREE.MeshBasicMaterial({ color: 0xffffff })
@@ -52,40 +46,35 @@
         marker.visible = false;
         scene.add(marker);
 
-        // --- Переменные для WebXR ---
         let hit, space;
 
-        // --- Определение платформы и показ соответствующей кнопки ---
+        // --- Показ кнопки, если WebXR AR поддерживается ---
         const arButton = document.getElementById('ar-button');
-        const quickLookLink = document.getElementById('quick-look');
-
-        // 1. Проверяем iOS Quick Look (Safari)
-        if (quickLookLink.relList.supports('ar')) {
-            quickLookLink.style.display = 'block';
-        }
-        // 2. Проверяем WebXR (Android Chrome и др.)
-        else if (navigator.xr) {
+        if (navigator.xr) {
             navigator.xr.isSessionSupported('immersive-ar').then(supported => {
                 if (supported) {
                     arButton.style.display = 'block';
                     arButton.onclick = startWebXR;
+                } else {
+                    console.warn("immersive-ar не поддерживается");
                 }
             });
+        } else {
+            console.warn("WebXR не поддерживается");
         }
 
-        // --- Запуск WebXR-сессии (только для Android) ---
+        // --- Запуск AR-сессии ---
         async function startWebXR() {
             const session = await navigator.xr.requestSession("immersive-ar", {
                 requiredFeatures: ["hit-test", "local-floor"]
             });
             renderer.xr.setSession(session);
 
-            // Получаем системы координат для hit-test
             space = await session.requestReferenceSpace("local-floor");
             const viewerSpace = await session.requestReferenceSpace("viewer");
             hit = await session.requestHitTestSource({ space: viewerSpace });
 
-            // По тапу размещаем модель на маркере
+            // Тап по экрану — ставим модель на маркер
             session.addEventListener("select", () => {
                 if (marker.visible && model) {
                     model.position.copy(marker.position);
@@ -95,14 +84,14 @@
             });
         }
 
-        // --- Цикл рендеринга (работает и в обычном режиме, и в WebXR) ---
+        // --- Цикл рендеринга ---
         renderer.setAnimationLoop((_, frame) => {
             if (frame && hit) {
                 const results = frame.getHitTestResults(hit);
                 if (results.length) {
                     const pose = results[0].getPose(space);
-                    const position = pose.transform.position;
-                    marker.position.set(position.x, position.y, position.z);
+                    const p = pose.transform.position;
+                    marker.position.set(p.x, p.y, p.z);
                     if (!model?.visible) marker.visible = true;
                 }
             }
