@@ -4,18 +4,77 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <style>
-        body { margin: 0; overflow: hidden; }
-        #ar-button { position: fixed; top: 20px; left: 20px; z-index: 10; display: none; }
+        body { margin: 0; overflow: hidden; font-family: sans-serif; }
+
+        /* Кнопка START AR */
+        #ar-button {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 10;
+            display: none;
+        }
+
+        /* Верхняя панель управления (цвет + смена модели) */
+        #top-panel {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 10;
+            display: none;
+            gap: 10px;
+        }
+        #top-panel button {
+            padding: 10px 16px;
+            border: none;
+            border-radius: 8px;
+            background: rgba(0, 0, 0, 0.6);
+            color: #fff;
+            font-size: 14px;
+        }
+
+        /* Нижняя панель управления (стрелки вращения) */
+        #bottom-panel {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+            display: none;
+            gap: 60px;
+        }
+        #bottom-panel button {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            border: none;
+            background: rgba(0, 0, 0, 0.6);
+            color: #fff;
+            font-size: 32px;
+            line-height: 1;
+        }
     </style>
 </head>
 <body>
     <button id="ar-button">START AR</button>
 
+    <!-- Верхняя панель: смена цвета и модели -->
+    <div id="top-panel">
+        <button id="btn-color">COLOR</button>
+        <button id="btn-model">MODEL</button>
+    </div>
+
+    <!-- Нижняя панель: вращение влево / вправо -->
+    <div id="bottom-panel">
+        <button id="btn-left">&#9664;</button>
+        <button id="btn-right">&#9654;</button>
+    </div>
+
     <script type="module">
         import * as THREE from "https://esm.sh/three@0.180.0";
         import { GLTFLoader } from "https://esm.sh/three@0.180.0/examples/jsm/loaders/GLTFLoader.js";
 
-        // --- Сцена Three.js ---
+        // --- Сцена ---
         const scene = new THREE.Scene();
         scene.add(new THREE.AmbientLight(0xffffff, 2));
         const light = new THREE.DirectionalLight(0xffffff, 3);
@@ -28,16 +87,16 @@
         renderer.setSize(innerWidth, innerHeight);
         document.body.appendChild(renderer.domElement);
 
-        // --- Загрузка модели (замените MODEL.glb) ---
+        // --- Модель ---
         let model;
-        new GLTFLoader().load("model.glb", g => {
+        new GLTFLoader().load("MODEL.glb", g => {
             model = g.scene;
             model.visible = false;
             model.scale.setScalar(0.2);
             scene.add(model);
         });
 
-        // --- Кружочек-маркер ---
+        // --- Маркер ---
         const marker = new THREE.Mesh(
             new THREE.RingGeometry(0.08, 0.1, 32),
             new THREE.MeshBasicMaterial({ color: 0xffffff })
@@ -48,22 +107,22 @@
 
         let hit, space;
 
-        // --- Показ кнопки, если WebXR AR поддерживается ---
+        // --- UI-элементы ---
         const arButton = document.getElementById('ar-button');
+        const topPanel = document.getElementById('top-panel');
+        const bottomPanel = document.getElementById('bottom-panel');
+
+        // --- Проверка WebXR ---
         if (navigator.xr) {
             navigator.xr.isSessionSupported('immersive-ar').then(supported => {
                 if (supported) {
                     arButton.style.display = 'block';
                     arButton.onclick = startWebXR;
-                } else {
-                    console.warn("immersive-ar не поддерживается");
                 }
             });
-        } else {
-            console.warn("WebXR не поддерживается");
         }
 
-        // --- Запуск AR-сессии ---
+        // --- Запуск AR ---
         async function startWebXR() {
             const session = await navigator.xr.requestSession("immersive-ar", {
                 requiredFeatures: ["hit-test", "local-floor"]
@@ -73,6 +132,11 @@
             space = await session.requestReferenceSpace("local-floor");
             const viewerSpace = await session.requestReferenceSpace("viewer");
             hit = await session.requestHitTestSource({ space: viewerSpace });
+
+            // Прячем START AR, показываем панели управления
+            arButton.style.display = 'none';
+            topPanel.style.display = 'flex';
+            bottomPanel.style.display = 'flex';
 
             // Тап по экрану — ставим модель на маркер
             session.addEventListener("select", () => {
