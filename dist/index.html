@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>WebAR</title>
+    <style>#ui{pointer-events:none;position:absolute;inset:0}#ui button{pointer-events:auto;position:absolute}.btn{border:none;padding:10px;font-size:16px;font-weight:700}#colorButton{color:#732e33;background-color:#c0d6ee;bottom:100px;left:20px}#modelButton{color:#830626;background-color:#fcdcdd;bottom:100px;right:20px}#rotateButton{color:#cc6540;background-color:#efe1ce;bottom:50px;right:20px}#startButton{color:#e0f5ee;background-color:#886144;position:absolute;top:30px;left:50%;transform:translate(-50%)}#ui[hidden]{display:none!important}</style>
+  <script type="module" crossorigin src="/pr_5/assets/index-CtvPxoNj.js"></script>
+</head>
+
+<body>
+    <button id="startButton" class="btn">Начать AR</button>
+    <div id="ui" hidden>
+        <button id="colorButton" class="btn">Изменить цвет</button>
+        <button id="modelButton" class="btn">Сменить модель</button>
+        <button id="rotateButton" class="btn">Вращать модель</button>
+    </div>
+    <div id="status"></div>
+
+</body>
+
+</html>

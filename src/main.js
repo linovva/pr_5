@@ -26,7 +26,7 @@ loader.load("/models/model.glb", (gltf) => {
 
 loader.load("/models/model2.glb", (gltf) => {
     model2 = gltf.scene;
-    model2.scale.set(0.3, 0.3, 0.3);
+    model2.scale.set(0.1, 0.1, 0.1);
     model2.visible = false;
     model2.userData.colorChanged = false;
     scene.add(model2);

@@ -1,7 +1,8 @@
 import { defineConfig } from "vite";
 
 export default defineConfig({
+    base: "/pr_5/",
     server: {
-        allowedHosts: ["verification-commission-occupation-votes.trycloudflare.com"]
+        allowedHosts: ["warranty-course-receives-additional.trycloudflare.com"]
     }
 });

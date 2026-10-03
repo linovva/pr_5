@@ -23,23 +23,40 @@
         .btn{
             border: none;
             font-size: 16px;
-            color: rgb(64 64 64);
+            padding: 10px;
+            font-weight: 700;
         }
 
         #colorButton {
             left: 20px;
             bottom: 100px;
+            color: #732e33;
+            background-color: #C0D6EE;
         }
 
         #modelButton {
             right: 20px;
             bottom: 100px;
+            color: #830626;
+            background-color: #FCDCDD;
         }
 
         #rotateButton {
             bottom: 50px;
-            left: 50%;
+            right: 20px;
+            color: #CC6540;
+            background-color: #EFE1CE;
         }
+
+        #startButton {
+            position: absolute;
+            top: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #E0F5EE;
+            background-color: #886144;
+        }
+
         #ui[hidden] {
             display: none !important;
         }
@@ -48,10 +65,10 @@
 
 <body>
     <button id="startButton" class="btn">Начать AR</button>
-    <div id="ui">
+    <div id="ui" hidden>
         <button id="colorButton" class="btn">Изменить цвет</button>
         <button id="modelButton" class="btn">Сменить модель</button>
-        <button id="rotateButton" class="btn">Вращать</button>
+        <button id="rotateButton" class="btn">Вращать модель</button>
     </div>
     <div id="status"></div>
 
