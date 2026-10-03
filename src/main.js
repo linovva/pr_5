@@ -24,12 +24,6 @@ loader.load(
         model.visible = false;
         model.userData.colorChanged = false;
         scene.add(model);
-
-        document.getElementById("status").textContent = "model.glb загружена";
-    },
-    undefined,
-    () => {
-        document.getElementById("status").textContent = "Ошибка загрузки model.glb";
     }
 );
 
