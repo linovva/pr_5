@@ -1,166 +1,60 @@
 <!DOCTYPE html>
-<html>
+
+<html lang="ru">
+
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>WebAR</title>
+    <script type="module" src="/src/main.js"></script>
     <style>
-        body { margin: 0; overflow: hidden; font-family: sans-serif; }
+        #ui {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+        }
 
-        /* Кнопка START AR */
-        #ar-button {
-            position: fixed;
-            top: 20px;
+        #ui button {
+            position: absolute;
+            pointer-events: auto;
+        }
+
+        .btn{
+            border: none;
+            font-size: 16px;
+            color: rgb(64 64 64);
+        }
+
+        #colorButton {
             left: 20px;
-            z-index: 10;
-            display: none;
+            bottom: 100px;
         }
 
-        /* Верхняя панель управления (цвет + смена модели) */
-        #top-panel {
-            position: fixed;
-            top: 20px;
+        #modelButton {
             right: 20px;
-            z-index: 10;
-            display: none;
-            gap: 10px;
-        }
-        #top-panel button {
-            padding: 10px 16px;
-            border: none;
-            border-radius: 8px;
-            background: rgba(0, 0, 0, 0.6);
-            color: #fff;
-            font-size: 14px;
+            bottom: 100px;
         }
 
-        /* Нижняя панель управления (стрелки вращения) */
-        #bottom-panel {
-            position: fixed;
-            bottom: 30px;
+        #rotateButton {
+            bottom: 50px;
             left: 50%;
-            transform: translateX(-50%);
-            z-index: 10;
-            display: none;
-            gap: 60px;
         }
-        #bottom-panel button {
-            width: 70px;
-            height: 70px;
-            border-radius: 50%;
-            border: none;
-            background: rgba(0, 0, 0, 0.6);
-            color: #fff;
-            font-size: 32px;
-            line-height: 1;
+        #ui[hidden] {
+            display: none !important;
         }
     </style>
 </head>
+
 <body>
-    <button id="ar-button">START AR</button>
-
-    <!-- Верхняя панель: смена цвета и модели -->
-    <div id="top-panel">
-        <button id="btn-color">COLOR</button>
-        <button id="btn-model">MODEL</button>
+    <button id="startButton" class="btn">Начать AR</button>
+    <div id="ui">
+        <button id="colorButton" class="btn">Изменить цвет</button>
+        <button id="modelButton" class="btn">Сменить модель</button>
+        <button id="rotateButton" class="btn">Вращать</button>
     </div>
+    <div id="status"></div>
 
-    <!-- Нижняя панель: вращение влево / вправо -->
-    <div id="bottom-panel">
-        <button id="btn-left">&#9664;</button>
-        <button id="btn-right">&#9654;</button>
-    </div>
-
-    <script type="module">
-        import * as THREE from "https://esm.sh/three@0.180.0";
-        import { GLTFLoader } from "https://esm.sh/three@0.180.0/examples/jsm/loaders/GLTFLoader.js";
-
-        // --- Сцена ---
-        const scene = new THREE.Scene();
-        scene.add(new THREE.AmbientLight(0xffffff, 2));
-        const light = new THREE.DirectionalLight(0xffffff, 3);
-        light.position.set(1, 3, 2);
-        scene.add(light);
-
-        const camera = new THREE.PerspectiveCamera();
-        const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
-        renderer.xr.enabled = true;
-        renderer.setSize(innerWidth, innerHeight);
-        document.body.appendChild(renderer.domElement);
-
-        // --- Модель ---
-        let model;
-        new GLTFLoader().load("model.glb", g => {
-            model = g.scene;
-            model.visible = false;
-            model.scale.setScalar(0.2);
-            scene.add(model);
-        });
-
-        // --- Маркер ---
-        const marker = new THREE.Mesh(
-            new THREE.RingGeometry(0.08, 0.1, 32),
-            new THREE.MeshBasicMaterial({ color: 0xffffff })
-        );
-        marker.rotation.x = -Math.PI / 2;
-        marker.visible = false;
-        scene.add(marker);
-
-        let hit, space;
-
-        // --- UI-элементы ---
-        const arButton = document.getElementById('ar-button');
-        const topPanel = document.getElementById('top-panel');
-        const bottomPanel = document.getElementById('bottom-panel');
-
-        // --- Проверка WebXR ---
-        if (navigator.xr) {
-            navigator.xr.isSessionSupported('immersive-ar').then(supported => {
-                if (supported) {
-                    arButton.style.display = 'block';
-                    arButton.onclick = startWebXR;
-                }
-            });
-        }
-
-        // --- Запуск AR ---
-        async function startWebXR() {
-            const session = await navigator.xr.requestSession("immersive-ar", {
-                requiredFeatures: ["hit-test", "local-floor"]
-            });
-            renderer.xr.setSession(session);
-
-            space = await session.requestReferenceSpace("local-floor");
-            const viewerSpace = await session.requestReferenceSpace("viewer");
-            hit = await session.requestHitTestSource({ space: viewerSpace });
-
-            // Прячем START AR, показываем панели управления
-            arButton.style.display = 'none';
-            topPanel.style.display = 'flex';
-            bottomPanel.style.display = 'flex';
-
-            // Тап по экрану — ставим модель на маркер
-            session.addEventListener("select", () => {
-                if (marker.visible && model) {
-                    model.position.copy(marker.position);
-                    model.visible = true;
-                    marker.visible = false;
-                }
-            });
-        }
-
-        // --- Цикл рендеринга ---
-        renderer.setAnimationLoop((_, frame) => {
-            if (frame && hit) {
-                const results = frame.getHitTestResults(hit);
-                if (results.length) {
-                    const pose = results[0].getPose(space);
-                    const p = pose.transform.position;
-                    marker.position.set(p.x, p.y, p.z);
-                    if (!model?.visible) marker.visible = true;
-                }
-            }
-            renderer.render(scene, camera);
-        });
-    </script>
 </body>
+
 </html>
